@@ -9,7 +9,7 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--bg:#e8ecf0;--surface:#f5f7fa;--grid-bg:#1b2530;--grid-line:#d0d8e0;--text:#1a2a3a;--text-dim:#6a7a8a;--accent:#ff6b4a;--player:#4aadff;--player-glow:rgba(74,173,255,0.4);--enemy:#ff5c5c;--gold:#ffd24a;--green:#2ab866;--purple:#9b3ae0}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;display:flex;justify-content:center}
-.container{max-width:560px;width:100%;padding:16px}
+.container{max-width:560px;width:100%;padding:8px}
 
 .header{text-align:center;margin-bottom:12px}
 .title{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,var(--player),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -33,7 +33,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .mult-line{text-align:center;margin-bottom:8px;font-family:'Space Mono',monospace;font-size:18px;color:var(--text-dim)}
 .mult-line b{color:var(--gold);font-size:22px}
 
-#board-wrapper{position:relative;background:var(--grid-bg);border-radius:16px;padding:12px;border:1px solid var(--grid-line);margin-bottom:12px;box-shadow:inset 0 2px 12px rgba(0,0,0,0.3)}
+#board-wrapper{position:relative;background:var(--grid-bg);border-radius:12px;padding:6px;border:1px solid var(--grid-line);margin-bottom:8px;box-shadow:inset 0 2px 12px rgba(0,0,0,0.3)}
 #board-canvas{width:100%;display:block;cursor:pointer}
 
 .capture-popup{position:absolute;font-family:'Space Mono',monospace;font-weight:700;font-size:28px;color:var(--gold);pointer-events:none;z-index:200;text-shadow:0 0 10px var(--gold);animation:capFloat 1.2s ease-out forwards}
@@ -169,6 +169,28 @@ const game=(()=>{
     {id:'shield',name:'방어막',desc:'보스 Wave에서 적 2턴에 1번만 배치',icon:'🛡',rarity:'epic'},
     {id:'fortify',name:'요새화',desc:'내 성채 옆에 적 배치 불가 (1회용)',icon:'🏰',rarity:'epic',uses:1},
   ];
+
+  // Level-up definitions for non-stackable abilities (max Lv.3)
+  const UPGRADES={
+    bomb:{2:{uses:2,desc:'Wave당 2회: 적 1개 즉시 제거'},3:{uses:3,desc:'Wave당 3회: 적 1개 즉시 제거'}},
+    bridge:{2:{uses:2,desc:'Wave당 2회: 벽 1개 제거'},3:{uses:3,desc:'Wave당 3회: 벽 1개 제거'}},
+    anchor:{2:{desc:'Wave 시작 시 성채 3개 미리 배치'},3:{desc:'Wave 시작 시 성채 4개 미리 배치'}},
+    recycle:{2:{desc:'적을 잡으면 턴 1 회복 + 골드 +1'},3:{desc:'적을 잡으면 턴 2 회복 + 골드 +1'}},
+    combo:{2:{desc:'연속 포위 시 배율 ×2.5'},3:{desc:'연속 포위 시 배율 ×3'}},
+    mirror:{2:{uses:3,desc:'Wave당 3회: 좌우 대칭 추가 배치'},3:{uses:4,desc:'Wave당 4회: 좌우 대칭 추가 배치'}},
+    outpost:{2:{uses:3,desc:'Wave당 3회: 턴 소모 없이 배치'},3:{uses:4,desc:'Wave당 4회: 턴 소모 없이 배치'}},
+    extra3:{2:{desc:'모든 Wave에서 턴 영구 +5'},3:{desc:'모든 Wave에서 턴 영구 +7'}},
+    ko_master:{2:{desc:'되잡기 가능 + 되잡기 시 보너스 +50점'},3:{desc:'되잡기 가능 + 되잡기 시 보너스 +150점'}},
+    sacrifice:{2:{desc:'내 돌이 잡히면 돌당 +3 골드'},3:{desc:'내 돌이 잡히면 돌당 +4 골드 + 50점'}},
+    double:{2:{desc:'매 턴 2개 배치 + 첫 배치 시 영토 점수 +10%'},3:{desc:'매 턴 3개 배치'}},
+    diag:{2:{desc:'대각 포위 + 대각선 돌도 연결로 인정'},3:{desc:'대각 포위 + 대각 연결 + 적 활로 -1'}},
+    two_eyes:{2:{desc:'눈 보호 + 눈 1칸당 영토 점수 +20'},3:{desc:'눈 보호 + 눈 점수 +20 + 눈 주변 적 배율 ×1.5'}},
+    bigcap:{2:{desc:'3개 이상 동시 제거 시 ×2.5'},3:{desc:'3개 이상 동시 제거 시 ×3 + 골드 +2'}},
+    bounty:{2:{desc:'강화/증식 제거 시 ×4'},3:{desc:'강화/증식 제거 시 ×5 + 턴 +2'}},
+    streak:{2:{desc:'Wave 클리어마다 배율 +0.7 누적'},3:{desc:'Wave 클리어마다 배율 +1.0 누적'}},
+    shield:{2:{desc:'보스 Wave: 적 3턴에 1번만 배치'},3:{desc:'모든 Wave: 적 2턴에 1번만 배치'}},
+    fortify:{2:{uses:2,desc:'내 성채 옆에 적 배치 불가 (2회용)'},3:{uses:3,desc:'내 성채 옆에 적 배치 불가 (3회용)'}},
+  };
 
   const RARITY_COLORS={common:'#8a9ab0',rare:'#5a8aff',epic:'#d040ff'};
   const RARITY_NAMES={common:'일반',rare:'레어',epic:'에픽'};
@@ -398,10 +420,20 @@ const game=(()=>{
     board=Array.from({length:ROWS},()=>Array(COLS).fill(EMPTY));
     lastBoard=null;consecutivePasses=0;roundScore=0;capturedThisRound=0;territoryScore=0;territoryMap=[];
     armoredHits={};activeMode=null;waitingSecondPlace=false;vaultTimers=[];
-    maxTurns=20+(abilities.filter(a=>a.id==='extra3').length*3)+(abilities.filter(a=>a.id==='extra1').length);
+    const e3=abilities.find(a=>a.id==='extra3');
+    const e3bonus=e3?(e3.level>=3?7:e3.level>=2?5:3):0;
+    maxTurns=20+e3bonus+(abilities.filter(a=>a.id==='extra1').length);
     turnsLeft=maxTurns;
     multiplier=1+abilities.filter(a=>a.id==='mult2').length+abilities.filter(a=>a.id==='mult_s').length*0.2+streakBonus;
-    abilities.forEach(a=>{if(a.maxUses)a.usesLeft=a.maxUses;});
+    abilities.forEach(a=>{
+      if(a.uses||a.maxUses){
+        // Refresh uses based on current level
+        const lvl=a.level||1;
+        const upg=UPGRADES[a.id]&&UPGRADES[a.id][lvl];
+        const newUses=upg&&upg.uses?upg.uses:(a.uses||a.maxUses);
+        a.maxUses=newUses;a.usesLeft=newUses;
+      }
+    });
 
     // Place walls based on wave
     const numWalls=round>=3?Math.max(1,Math.min(Math.floor((round-2)*0.7),4)):0;
@@ -418,11 +450,13 @@ const game=(()=>{
     targetScore=round<=10?waveTargets[round]:3200+((round-10)*600);
 
     // Anchor: pre-place player stones (player's tactical advantage only)
-    if(abilities.some(a=>a.id==='anchor')){
+    const anchorAbility=abilities.find(a=>a.id==='anchor');
+    if(anchorAbility){
+      const anchorCount=anchorAbility.level>=3?4:anchorAbility.level>=2?3:2;
       const empties=[];
       for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(board[r][c]===EMPTY)empties.push({r,c});
       for(let i=empties.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[empties[i],empties[j]]=[empties[j],empties[i]];}
-      for(let i=0;i<Math.min(2,empties.length);i++) board[empties[i].r][empties[i].c]=PLAYER;
+      for(let i=0;i<Math.min(anchorCount,empties.length);i++) board[empties[i].r][empties[i].c]=PLAYER;
     }
 
     resize();render();updateUI();
@@ -448,14 +482,18 @@ const game=(()=>{
     }
   }
 
+  let dpr=1;
   function resize(){
     canvas=document.getElementById('board-canvas');
-    const wrapW=document.getElementById('board-wrapper').clientWidth-24;
+    dpr=window.devicePixelRatio||1;
+    const wrapW=document.getElementById('board-wrapper').clientWidth-12;
     cellW=wrapW/(COLS+1);
     cellH=cellW;
     const totalH=cellH*(ROWS+1);
-    canvas.width=wrapW;canvas.height=totalH;
+    canvas.width=wrapW*dpr;canvas.height=totalH*dpr;
     canvas.style.width=wrapW+'px';canvas.style.height=totalH+'px';
+    const ctx2=canvas.getContext('2d');
+    ctx2.scale(dpr,dpr);
   }
 
   function updateUI(){
@@ -504,7 +542,8 @@ const game=(()=>{
       const t=document.createElement('div');t.className='ability-tag';
       const isActive=activeMode===a.id;
       const hasUses=a.maxUses&&a.usesLeft>0;
-      t.textContent=a.icon+' '+a.name+(a.maxUses?' ('+a.usesLeft+')':'');
+      const lvlStr=a.level>1?' Lv.'+a.level:'';
+      t.textContent=a.icon+' '+a.name+lvlStr+(a.maxUses?' ('+a.usesLeft+')':'');
       if(hasUses){
         t.style.cursor='pointer';
         t.style.userSelect='none';
@@ -1102,8 +1141,11 @@ const game=(()=>{
       }
     }
     // Sacrifice ability: gain gold when own stones are captured
-    if(capturedCount>0&&abilities.some(a=>a.id==='sacrifice')){
-      gold+=capturedCount*2;
+    const sacA=abilities.find(a=>a.id==='sacrifice');
+    if(capturedCount>0&&sacA){
+      const sacGold=sacA.level>=3?4:sacA.level>=2?3:2;
+      gold+=capturedCount*sacGold;
+      if(sacA.level>=3)roundScore+=capturedCount*50;
     }
   }
 
@@ -1208,7 +1250,8 @@ const game=(()=>{
       // Combo bonuses
       if(capturedThisRound>0){
         const comboSmall=abilities.filter(a=>a.id==='combo_s').length*0.3;
-        const comboBig=abilities.some(a=>a.id==='combo')?2:0;
+        const comboA=abilities.find(a=>a.id==='combo');
+        const comboBig=comboA?(comboA.level>=3?3:comboA.level>=2?2.5:2):0;
         const comboMult=1+comboSmall+comboBig;
         if(comboMult>1){pts*=comboMult;bonuses.push('연쇄×'+comboMult);}
       }
@@ -1234,7 +1277,8 @@ const game=(()=>{
       roundScore+=Math.floor(pts);capturedThisRound+=cap.total;
       gold+=Math.floor(goldKills/2); // 2 scoring kills per 1 gold
       showCapturePopup(r,c,Math.floor(pts),cap.total,bonuses);
-      if(abilities.some(a=>a.id==='recycle'))turnsLeft++;
+      const recycleA=abilities.find(a=>a.id==='recycle');
+      if(recycleA){turnsLeft+=recycleA.level>=3?2:1;if(recycleA.level>=2)gold++;}
     }
 
     lastBoard=saved;
@@ -1524,30 +1568,53 @@ const game=(()=>{
 
   let shopItems=[];
 
+  function getAbilityLevel(id){
+    const a=abilities.find(a=>a.id===id&&!a.stackable);
+    return a?(a.level||1):0;
+  }
+
   function generateShopItems(){
-    const owned=abilities.map(a=>a.id);
-    const available=ALL_ABILITIES.filter(a=>a.stackable||!owned.includes(a.id));
-    
-    const commons=available.filter(a=>a.rarity==='common');
-    const rares=available.filter(a=>a.rarity==='rare');
-    const epics=available.filter(a=>a.rarity==='epic');
-    
-    // Shuffle each pool
+    const pool=[];
+    for(const a of ALL_ABILITIES){
+      if(a.stackable){pool.push({...a});continue;}
+      const lvl=getAbilityLevel(a.id);
+      if(lvl===0){
+        // Not owned: show as Lv.1
+        pool.push({...a,level:1});
+      } else if(lvl<3&&UPGRADES[a.id]&&UPGRADES[a.id][lvl+1]){
+        // Owned: show upgrade
+        const upg=UPGRADES[a.id][lvl+1];
+        pool.push({...a,level:lvl+1,isUpgrade:true,
+          name:a.name+' Lv.'+( lvl+1),
+          desc:upg.desc,
+          uses:upg.uses||a.uses});
+      }
+      // lvl 3 = maxed, don't show
+    }
+
+    const commons=pool.filter(a=>a.rarity==='common');
+    const rares=pool.filter(a=>a.rarity==='rare');
+    const epics=pool.filter(a=>a.rarity==='epic');
+
     const shuffle=arr=>[...arr].sort(()=>Math.random()-0.5);
     const sc=shuffle(commons), sr=shuffle(rares), se=shuffle(epics);
-    
-    // Pick: 2-3 common, 1 rare, 0-1 epic (10% chance per wave, +5% per wave)
+
     const items=[];
     const epicChance=Math.min(0.05+round*0.05, 0.4);
     const hasEpic=Math.random()<epicChance&&se.length>0;
-    
+
     if(hasEpic) items.push(se[0]);
     if(sr.length>0) items.push(sr[0]);
     const commonSlots=4-items.length;
     for(let i=0;i<commonSlots&&i<sc.length;i++) items.push(sc[i]);
-    
-    // Shuffle final order
-    shopItems=shuffle(items).map(a=>({...a,price:ABILITY_PRICES[a.id]||4}));
+
+    shopItems=shuffle(items).map(a=>{
+      const basePrice=ABILITY_PRICES[a.id]||4;
+      const lvl=a.level||1;
+      // Upgrades cost more: Lv.2 = 1.5x, Lv.3 = 2x
+      const price=a.isUpgrade?Math.floor(basePrice*(0.5+lvl*0.5)):basePrice;
+      return{...a,price};
+    });
   }
 
   function showShop(){
@@ -1570,9 +1637,12 @@ const game=(()=>{
       const rb=RARITY_BORDERS[a.rarity]||'#556575';
       const rn=RARITY_NAMES[a.rarity]||'일반';
       const rbg=RARITY_BG[a.rarity]||'#f0f2f5';
-      html+=`<div class="ability-card" style="background:${rbg};border:2px solid ${rb};${canBuy?'':'opacity:0.5;pointer-events:none;'}" onclick="game.buyAbility(${i})">
+      const isUpg=a.isUpgrade;
+      const upgBorder=isUpg?'border-left:4px solid #4aff8b;':'';
+      const upgLabel=isUpg?'<span style="font-size:11px;color:#4aff8b;margin-left:6px">⬆ 업그레이드</span>':'';
+      html+=`<div class="ability-card" style="background:${rbg};border:2px solid ${rb};${upgBorder}${canBuy?'':'opacity:0.5;pointer-events:none;'}" onclick="game.buyAbility(${i})">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div class="ability-card-name" style="color:${rc}">${a.icon} ${a.name}</div>
+          <div class="ability-card-name" style="color:${rc}">${a.icon} ${a.name}${upgLabel}</div>
           <div style="display:flex;align-items:center;gap:10px">
             <span style="font-size:15px;color:${rc};font-family:'Space Mono',monospace;font-weight:700">${rn}</span>
             <span style="font-family:'Space Mono',monospace;font-size:20px;color:${rc};font-weight:700">💰${a.price}</span>
@@ -1590,7 +1660,7 @@ const game=(()=>{
         const rc=RARITY_COLORS[a.rarity]||'#8a9ab0';
         html+=`<div class="ability-card" style="padding:10px;margin-top:4px" onclick="game.sellAbility(${i})">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:13px;color:${rc}">${a.icon} ${a.name}</span>
+            <span style="font-size:13px;color:${rc}">${a.icon} ${a.name}${a.level>1?' Lv.'+a.level:''}</span>
             <span style="font-family:'Space Mono',monospace;font-size:13px;color:#4aff8b">판매 +${sellPrice}💰</span>
           </div>
         </div>`;
@@ -1612,7 +1682,15 @@ const game=(()=>{
     gold-=item.price;
     const ability={...item};
     if(ability.uses){ability.maxUses=ability.uses;ability.usesLeft=ability.uses;}
-    abilities.push(ability);
+    if(!ability.level)ability.level=1;
+    if(ability.isUpgrade){
+      // Replace existing ability with upgraded version
+      const existIdx=abilities.findIndex(a=>a.id===ability.id&&!a.stackable);
+      if(existIdx>=0)abilities[existIdx]={...ability};
+      else abilities.push(ability);
+    } else {
+      abilities.push(ability);
+    }
     shopItems.splice(idx,1);
     renderShop();
   }
