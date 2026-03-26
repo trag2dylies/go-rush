@@ -148,11 +148,11 @@ const game=(()=>{
       desc:'놓자마자 자기 활로가 0이 되는 곳에는 놓을 수 없습니다.<br><b>단, 놓으면서 상대를 잡으면 활로가 생기므로 OK!</b><br><br>🔵 위쪽 빈칸: 적 4개를 동시에 잡을 수 있음 ✓<br>🚫 아래쪽 빈칸: 자충수라 놓을 수 없음 ✗',
       tip:'위쪽 빈칸에 놓아보세요!'},
     4:{title:'Wave 4 — 영토',
-      desc:'이번 Wave부터 <b>영토 점수</b>가 활성화됩니다!<br>성채로 빈 영역을 완전히 둘러싸면 영토 점수를 얻습니다.<br>칸당 30점 × 배율',
-      tip:'적을 잡으면서 동시에 영토를 만들어보세요'},
+      desc:'이번 Wave부터 <b>영토 점수</b>가 활성화됩니다!<br>성채로 빈 영역을 완전히 둘러싸면 칸당 30점!<br><br>왼쪽 위에 거의 완성된 울타리가 있습니다.<br><b>빈칸 하나를 막아 영토를 완성하고, 아래쪽 적도 잡으세요!</b>',
+      tip:'울타리의 빈틈을 찾아 막으면 영토가 됩니다'},
     5:{title:'Wave 5 — 되잡기 금지 (패)',
-      desc:'적을 잡은 직후, 보드가 직전과 똑같아지는 수는 <b>금지</b>됩니다.<br>무한 반복을 방지하는 규칙입니다.<br><br>나중에 "되잡기 달인" 능력으로 무시할 수 있습니다.',
-      tip:'패 상황에선 다른 곳에 먼저 놓고 나중에 되잡으세요'},
+      desc:'가운데 빈칸에 놓아 적을 잡아보세요.<br>적이 바로 <b>되잡기</b>를 합니다!<br><br>이때 같은 자리에 바로 놓을 수 <b>없습니다</b> (패 규칙).<br><b>다른 곳에 먼저 놓은 후</b> 돌아와서 다시 잡으세요!',
+      tip:'패 상황 → 다른 적을 먼저 잡고 → 돌아와서 되잡기'},
     6:{title:'Wave 6 — 상점 오픈!',
       desc:'기본 규칙을 모두 익혔습니다!<br><br>이제부터 Wave 클리어 후 <b>상점</b>에서 능력을 구매할 수 있습니다.<br>능력을 조합해서 더 높은 Wave에 도전하세요!'},
     7:{title:'새로운 적: 금고 💰',
@@ -229,6 +229,39 @@ const game=(()=>{
         {r:6,c:4,t:ENEMY},{r:7,c:3,t:ENEMY},{r:7,c:5,t:ENEMY},{r:8,c:4,t:ENEMY},
       ],
       target:200, turns:10,
+    },
+    4:{
+      // Territory lesson: close the gap to form territory + capture enemies
+      pieces:[
+        // Almost-enclosed territory (gap at (2,3))
+        {r:0,c:0,t:PLAYER},{r:0,c:1,t:PLAYER},{r:0,c:2,t:PLAYER},{r:0,c:3,t:PLAYER},
+        {r:1,c:0,t:PLAYER},{r:1,c:3,t:PLAYER},
+        {r:2,c:0,t:PLAYER},  // (2,3) is the gap the player must close
+        {r:3,c:0,t:PLAYER},{r:3,c:1,t:PLAYER},{r:3,c:2,t:PLAYER},{r:3,c:3,t:PLAYER},
+        // Enemy 1 at (6,2): 1 liberty at (6,3)
+        {r:5,c:2,t:PLAYER},{r:6,c:1,t:PLAYER},{r:7,c:2,t:PLAYER},
+        {r:6,c:2,t:ENEMY},
+        // Enemy 2 at (6,5): 1 liberty at (6,6)
+        {r:5,c:5,t:PLAYER},{r:6,c:4,t:PLAYER},{r:7,c:5,t:PLAYER},
+        {r:6,c:5,t:ENEMY},
+      ],
+      target:300, turns:12,
+    },
+    5:{
+      // Ko lesson: capture creates ko, enemy recaptures, player must play elsewhere
+      // Ko shape: P captures E(4,1) at (4,2), then P(4,2) has 1 liberty → enemy recaptures
+      pieces:[
+        // Ko shape
+        {r:3,c:1,t:PLAYER},{r:4,c:0,t:PLAYER},{r:5,c:1,t:PLAYER},
+        {r:3,c:2,t:ENEMY},{r:4,c:1,t:ENEMY},{r:4,c:3,t:ENEMY},{r:5,c:2,t:ENEMY},
+        // Extra enemies for scoring while waiting (1 liberty each)
+        {r:1,c:5,t:ENEMY},  // liberty at (0,5)
+        {r:1,c:4,t:PLAYER},{r:2,c:5,t:PLAYER},
+        {r:7,c:3,t:ENEMY},  // liberty at (7,4)
+        {r:6,c:3,t:PLAYER},{r:7,c:2,t:PLAYER},{r:8,c:3,t:PLAYER},
+      ],
+      target:300, turns:15,
+      withEnemy:true, enemySkip:0,
     },
   };
 
@@ -956,7 +989,8 @@ const game=(()=>{
 
     // Enemy turn after short delay
     // Early waves: enemy skips turns to give player breathing room
-    const enemySkipChance=TUTORIAL_BOARDS[round]?1.0:round<=4?0.4:round<=6?0.15:0;
+    const tBoard=TUTORIAL_BOARDS[round];
+    const enemySkipChance=tBoard?(tBoard.withEnemy?(tBoard.enemySkip||0):1.0):round<=4?0.4:round<=6?0.15:0;
     setTimeout(()=>{
       const result=(Math.random()<enemySkipChance)?undefined:enemyTurn();
       tickSpawners();
@@ -1418,7 +1452,7 @@ const game=(()=>{
       if(recycleA){turnsLeft+=recycleA.level>=3?2:1;if(recycleA.level>=2)gold++;}
     }
 
-    lastBoard=saved;
+    lastBoard=board.map(row=>[...row]);
     return true;
   }
 
